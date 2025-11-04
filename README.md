@@ -1,5 +1,7 @@
 # Explosive Connectivity and Mechanical Rigidity in Cubic Lattice Structures
 
+<img src = "https://github.com/garyptchoi/cubic-lattice-percolation/blob/main/cover.png" height="400" />
+
 This repository contains the complete source code and analysis pipeline for the explosive Connectivity and mechanical rigidity in cubic lattice structures.
 
 The repository includes two main Python scripts:
