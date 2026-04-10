@@ -38,7 +38,7 @@ The codebase requires **Python 3.9+** and standard scientific computing librarie
 ```bash
 pip install numpy pandas scipy matplotlib seaborn
 
-
+```
 
 ## Citation
 
@@ -65,6 +65,6 @@ arXiv preprint arXiv:2511.01537, 2025.
 This project is licensed under the Apache-2.0 License.
 
 
-Copyright (c) 2025, Trenton Lau and Gary P. T. Choi
+Copyright (c) 2025-2026, Trenton Lau and Gary P. T. Choi
 
 https://github.com/garyptchoi/cubic-lattice-percolation
