@@ -1,5 +1,9 @@
 # Explosive Connectivity and Mechanical Rigidity in Cubic Lattice Structures
 
+
+<img src = "https://github.com/garyptchoi/cubic-lattice-percolation/blob/main/cover.png" height="400"/>
+
+
 This repository contains the high-performance simulation and analysis codebase for the paper **"Explosive Connectivity and Mechanical Rigidity in Cubic Lattice Structures"** by Trenton Lau and Gary P. T. Choi.
 
 It provides a highly optimized suite of Python scripts to study percolation phase transitions and mechanical rigidification in 3D lattice structures (Nearest-Neighbor and Intra-cube models) using a $k$-choice Achlioptas product-rule process.
@@ -25,7 +29,7 @@ Contains the data-parsing and visualization engines that generate the figures us
 
 ### `theoretical_validation/`
 Contains mathematical validation scripts supporting the paper's proofs.
-* **`validate_lemma_IV32.py`**: A dedicated testing script utilizing a fully vectorized edge-generation engine to strictly validate the microscopic mixed-sample selection dynamics (Table S1).
+* **`validate_lemma.py`**: A dedicated testing script utilizing a fully vectorized edge-generation engine to strictly validate the microscopic mixed-sample selection dynamics (Table S1).
 
 ### `videos/`
 Contains the animation pipeline for the supplementary materials.
