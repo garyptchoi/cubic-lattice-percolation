@@ -1,15 +1,12 @@
+#!/usr/bin/env python3
 import os, sys, time, csv
 import numpy as np
 import multiprocessing as mp
 from collections import deque
 
-# STRICT HPC COMPLIANCE: Prevent 192 cores from fighting each other
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
-# ==============================================================================
-# 1. EXACT DSU-HYBRID PEBBLE GAME (Relaxed boundary constraints)
-# ==============================================================================
 class FastDSU:
     def __init__(self, N):
         self.parent = np.arange(N, dtype=np.int32)
@@ -70,9 +67,6 @@ class PebbleGame3D_Relaxed:
 
     def add_edge(self, u: int, v: int, dsu_pg: FastDSU) -> bool:
         if u == v: return False
-        
-        # DSU-HYBRID RELAXATION: Unconditional independence across disconnected components
-        # This completely bypasses the boundary isolated-vertex traps!
         if dsu_pg.find(u) != dsu_pg.find(v):
             if self.search_and_bring(u, -1, -1):
                 self.pebbles[u] -= 1; self.adj[u].append(v); self.independent_edges += 1; dsu_pg.union(u, v); return True
@@ -80,7 +74,6 @@ class PebbleGame3D_Relaxed:
                 self.pebbles[v] -= 1; self.adj[v].append(u); self.independent_edges += 1; dsu_pg.union(u, v); return True
             return False
             
-        # Strict Laman check for internal redundant loops
         while self.pebbles[u] < 3:
             if not self.search_and_bring(u, u, v): break
         while self.pebbles[v] < 3:
@@ -96,8 +89,8 @@ class PebbleGame3D_Relaxed:
 def generate_edges_fast(L):
     n = np.int32(L + 1)
     n_sq = n * n
-    offs =[(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, -1, 0), (1, 0, 1), (1, 0, -1), (0, 1, 1), (0, 1, -1), (1, 1, 1), (1, 1, -1), (1, -1, 1), (1, -1, -1)]
-    edges =[]
+    offs = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, -1, 0), (1, 0, 1), (1, 0, -1), (0, 1, 1), (0, 1, -1), (1, 1, 1), (1, 1, -1), (1, -1, 1), (1, -1, -1)]
+    edges = []
     for dx, dy, dz in offs:
         x = np.arange(max(0, -dx), min(n, n - dx), dtype=np.int32)
         y = np.arange(max(0, -dy), min(n, n - dy), dtype=np.int32)
@@ -108,18 +101,12 @@ def generate_edges_fast(L):
         edges.extend(zip(u.ravel(), v.ravel()))
     return np.array(edges, dtype=np.int32), int(n**3)
 
-# ==============================================================================
-# 2. WORKER PROCESS (Only runs Rigidity, saves massive time)
-# ==============================================================================
 def run_rigidity_only(task):
     L, k_ep, run_idx = task
     np.random.seed(int.from_bytes(os.urandom(4), byteorder='little'))
-    
     edges, N = generate_edges_fast(L)
     M = len(edges)
-    
-    idx_shuffle = np.random.permutation(M)
-    edges = edges[idx_shuffle]
+    edges = edges[np.random.permutation(M)]
     
     dsu_graph = FastDSU(N)
     dsu_pg = FastDSU(N)
@@ -151,7 +138,6 @@ def run_rigidity_only(task):
             best_idx = int(np.random.choice(best_cands))
 
         u, v = edges[best_idx]
-        
         pg.add_edge(u, v, dsu_pg)
         if pg.independent_edges == target:
             return (run_idx, L, k_ep, float(step) / float(M))
@@ -162,39 +148,31 @@ def run_rigidity_only(task):
         
     return (run_idx, L, k_ep, -1.0)
 
-# ==============================================================================
-# 3. MASTER SCHEDULER
-# ==============================================================================
 def main():
-    print("==================================================", flush=True)
-    print(" 🚀 PRE-FLIGHT CHECK (Testing Hardest Case: L=10, k=32)", flush=True)
-    print("==================================================", flush=True)
-    
+    print("==================================================")
+    print(" PRE-FLIGHT CHECK (Testing L=10, k=32)")
+    print("==================================================")
     test_res = run_rigidity_only((10, 32, 0))
     if test_res[3] == -1.0:
-        print("\n[!] FATAL BUG DETECTED: Rigidity returned -1.0.", flush=True)
-        print("[!] ABORTING CAMPAIGN TO SAVE AWS BUDGET.", flush=True)
+        print("[!] FATAL BUG DETECTED: Rigidity returned -1.0.")
         sys.exit(1)
     else:
-        print(f"\n[SUCCESS] Pre-flight passed! L=10, k=32 rigidified at p = {test_res[3]:.5f}\n", flush=True)
+        print(f"[SUCCESS] Pre-flight passed! L=10, k=32 rigidified at p = {test_res[3]:.5f}\n")
 
     REPS = 20000
     L_values = list(range(1, 11))
-    k_values = list(range(1, 33)) # ALL k=1..32
+    k_values = list(range(1, 33))
     
-    OUTPUT_DIR = "AWS_Rigidity_Only_20k"
+    OUTPUT_DIR = "./simulations/AWS_Rigidity_Only_20k"
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    HEADERS =["run_idx", "L", "k", "p_rigid"]
+    HEADERS = ["run_idx", "L", "k", "p_rigid"]
     
     num_workers = max(1, os.cpu_count() - 1)
-    print("==================================================", flush=True)
-    print(f" 🚀 INITIATING 192-CORE RIGIDITY CAMPAIGN", flush=True)
-    print("==================================================\n", flush=True)
+    print(f" INITIATING {num_workers}-CORE RIGIDITY CAMPAIGN\n")
     
     start_time_global = time.time()
     with mp.Pool(num_workers) as pool:
         for L in L_values:
-            # We open files for all k simultaneously to allow perfect shuffling & load balancing
             completed = {k: set() for k in k_values}
             files, writers = {}, {}
             for k in k_values:
@@ -204,9 +182,7 @@ def main():
                         reader = csv.reader(f)
                         next(reader, None)
                         for row in reader:
-                            if row:
-                                try: completed[k].add(int(row[0]))
-                                except: pass
+                            if row: completed[k].add(int(row[0]))
                     files[k] = open(csv_path, 'a', newline='')
                 else:
                     files[k] = open(csv_path, 'w', newline='')
@@ -214,7 +190,6 @@ def main():
                     writers[k].writerow(HEADERS)
                 writers[k] = csv.writer(files[k])
             
-            # Mix all tasks for perfect 192-core load balancing
             tasks = []
             for k in k_values:
                 tasks.extend([(L, k, i) for i in range(REPS) if i not in completed[k]])
@@ -223,28 +198,22 @@ def main():
                 continue
                 
             np.random.shuffle(tasks)
-            print(f"-> [START] Submitting L={L:2d} (All k mixed) | Total Tasks: {len(tasks):,}", flush=True)
+            print(f"-> [START] Submitting L={L:2d} | Total Tasks: {len(tasks):,}")
             batch_start = time.time()
             
             for i, res in enumerate(pool.imap_unordered(run_rigidity_only, tasks, chunksize=10)):
                 run_idx, L_res, k_res, p_rigid = res
                 writers[k_res].writerow([run_idx, L_res, k_res, p_rigid])
                 
-                # Atomic debugging logging every 1000 runs
                 if (i + 1) % 1000 == 0 or (i + 1) == len(tasks):
-                    for f in files.values():
-                        f.flush()
-                        os.fsync(f.fileno()) 
+                    for f in files.values(): f.flush()
                     elapsed = time.time() - batch_start
-                    rate = (i + 1) / elapsed
-                    print(f"   [ATOMIC LOG] L={L:2d} | Progress: {i+1:6d}/{len(tasks)} | Speed: {rate:6.1f} runs/sec", flush=True)
+                    print(f"   [ATOMIC LOG] L={L:2d} | Progress: {i+1:6d}/{len(tasks)} | Speed: {(i+1)/elapsed:6.1f} runs/sec")
                             
             for f in files.values(): f.close()
-            print(f"-> [DONE] L={L:2d} finished in {(time.time()-batch_start)/60:.1f} minutes.\n", flush=True)
+            print(f"-> [DONE] L={L:2d} finished in {(time.time()-batch_start)/60:.1f} minutes.\n")
 
-    print("==================================================", flush=True)
-    print(f" CAMPAIGN COMPLETE IN {(time.time() - start_time_global)/3600:.2f} HOURS!", flush=True)
-    print("==================================================", flush=True)
+    print(f" CAMPAIGN COMPLETE IN {(time.time() - start_time_global)/3600:.2f} HOURS!")
 
 if __name__ == "__main__":
     main()

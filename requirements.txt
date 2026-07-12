@@ -1,8 +1,5 @@
-# Python dependencies for 3D Cubic Lattice Percolation Analysis
-# Install these packages using the command: pip install -r requirements.txt
-
-numpy>=2.0.0
-pandas>=2.2.0
-scipy>=1.11.0
-matplotlib>=3.8.0
-seaborn>=0.13.0
+numpy>=1.20.0
+pandas>=1.3.0
+scipy>=1.7.0
+matplotlib>=3.4.0
+seaborn>=0.11.0

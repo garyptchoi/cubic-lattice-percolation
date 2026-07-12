@@ -1,56 +1,102 @@
 # Explosive Connectivity and Mechanical Rigidity in Cubic Lattice Structures
 
-
 <img src = "https://github.com/garyptchoi/cubic-lattice-percolation/blob/main/cover.png" height="400"/>
 
-
-This repository contains the high-performance simulation and analysis codebase for the paper **"Explosive Connectivity and Mechanical Rigidity in Cubic Lattice Structures"** by Trenton Lau and Gary P. T. Choi.
-
-It provides a highly optimized suite of Python scripts to study percolation phase transitions and mechanical rigidification in 3D lattice structures (Nearest-Neighbor and Intra-cube models) using a $k$-choice Achlioptas product-rule process.
+This repository contains the numerical simulation pipeline (designed for massive-scale parallel computing), mathematical validators, data processing scripts, and SI video rendering code for our study on explosive connectivity and mechanical rigidity transitions in 3D cubic lattices under Achlioptas-type product-rule dynamics.
 
 ## Repository Structure
 
-The codebase is organized into five modular directories:
+*   `simulations/`
+    *   `simulate_thermodynamics.py`: Simulates the connectivity phase transition up to macroscopic scales ($L=192, N \approx 7.2 \times 10^6$). Features an ultra-fast `FastDSU` (Disjoint Set Union) class for tracking peak susceptibility, macroscopic jumps, and high-resolution phase crossings.
+    *   `simulate_relaxed_rigidity.py`: Simulates the mechanical rigidity transition. Features an exact 3D (3,6)-Pebble Game algorithm modified with relaxed boundary conditions to safely track bulk macroscopic rigidification without being trapped by finite-size surface anomalies.
+*   `data_analysis/`
+    *   `generate_statistics_tables.py`: Calculates and prints the raw LaTeX rows for the tables shown in our work.
+    *   `unified_analysis.py`: Performs calculations directly on raw CSV simulation data to plot the overall thermodynamic mechanics grid.
+*   `plotting/`
+    *   `plot_thermodynamics.py`: Generates separate figures for phase transitions, jumps, and scaling fits.
+    *   `plot_fss_asymptotic.py`: Generates peak susceptibility scaling plots calculated strictly for system sizes $L \ge 24$.
+    *   `plot_rigidity_gap.py`: Generates the 8-panel rigidity-connectivity gap transition comparison.
+*   `theoretical_validation/`
+    *   `plot_legend_only.py`: Standalone editable vector legends.
+    *   `plot_ultimate_phase_curves_all_L.py`: Generates the complete spectrum of curves up to $L = 192$.
+    *   `validate_lemma.py`: Complete mathematical validation for structural Lemma IV.32.
+*   `videos/`
+    *   `generate_all_videos.py`: Animates the 9 Supplementary Information movies.
 
-### `simulations/`
-Contains the core $O(1)$ physics engines designed for massive-scale parallel computing (e.g., 192-core AWS clusters).
-* **`simulate_thermodynamics.py`**: Simulates the connectivity phase transition up to macroscopic scales ($L=192, N \approx 7.2 \times 10^6$). Features an ultra-fast `FastDSU` (Disjoint Set Union) class for tracking peak susceptibility, macroscopic jumps, and high-resolution phase crossings.
-* **`simulate_relaxed_rigidity.py`**: Simulates the mechanical rigidity transition. Features an exact 3D (3,6)-Pebble Game algorithm modified with relaxed boundary conditions to safely track bulk macroscopic rigidification without being trapped by finite-size surface anomalies.
+---
 
-### `data_analysis/`
-Contains the statistical testing and tabular generation scripts.
-* **`generate_statistics_tables.py`**: The central statistical engine. It merges the rigidity `.tar.gz` archives with the thermodynamic `.pkl` cache to calculate the exact rigidity-connectivity gap ($\Delta p_c$). It performs Spearman's rank correlation tests to rigorously prove optimal rigidification efficiency and outputs the pre-formatted LaTeX tables (Tables S2 & S3).
+## Installation & Setup
 
-### `plotting/`
-Contains the data-parsing and visualization engines that generate the figures used in the manuscript.
-* **`plot_fast.py`**: A fast C-engine parser that compiles raw CSVs into an optimized `.pkl` cache and generates the Normalized Susceptibility Spectrum (Fig 5).
-* **`plot_thermodynamics.py`**: Generates the finite-size scaling plots, max jump stabilization plots, high-resolution phase curves, and bimodality histograms (Figs 3 & 4).
-* **`plot_rigidity_gap.py`**: Generates the definitive 8-panel plot comparing the connectivity curves against the relaxed rigidity cumulative distribution functions (Fig 6).
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/garyptchoi/cubic-lattice-percolation.git
+   cd cubic-lattice-percolation
+   ```
 
-### `theoretical_validation/`
-Contains mathematical validation scripts supporting the paper's proofs.
-* **`validate_lemma.py`**: A dedicated testing script utilizing a fully vectorized edge-generation engine to strictly validate the microscopic mixed-sample selection dynamics (Table S1).
+2. Create a virtual environment and install dependencies:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows use: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
 
-### `videos/`
-Contains the animation pipeline for the supplementary materials.
-* **`generate_all_videos.py`**: A comprehensive `matplotlib.animation` pipeline leveraging FFmpeg to generate all 10 Supplementary MP4 videos. This includes dynamical transitions across choice parameters, small-scale scaling, and macroscopic finite-size scaling confirming the critical exponent $\gamma=1.000$.
+---
 
-## Requirements & Installation
+## Replication Guide
 
-The codebase requires **Python 3.9+** and standard scientific computing libraries. The simulation scripts are heavily optimized to run on multi-core systems (automatically scaling to the maximum available CPU cores via `multiprocessing`).
+### 1. Dataset Placement
+The calculations and plots rely on datasets and visual assets generated from our massive 20,000-repetition campaign. Download `data.zip` and extract the data files into the local `./data/` folder:
+```text
+cubic-lattice-percolation/
+└── data/
+    ├── optimized_campaign_cache_fast.pkl     # Connectivity cache for plotting
+    ├── optimized_campaign_cache_20k_v5.pkl   # High-statistics video cache
+    ├── Legend_System_Size.png                # Custom colorbar legend
+    └── V1_Rigidity_20k.tar.gz                # 20k-repetition rigidity dataset
+```
 
+### 2. Generating Tables and Correlation Tests
+To calculate the statistical rows for the paper tables and perform the Spearman rank correlation proofs, run:
 ```bash
-pip install numpy pandas scipy matplotlib seaborn
+python data_analysis/generate_statistics_tables.py
+```
+
+### 3. Generating Figures
+To generate the plotting curves and scale-invariant figures, execute the respective plotting utilities. All outputs will be saved in vector (`.pdf`) and raster (`.png`) formats inside the `./plots` directory:
+```bash
+# Thermodynamics (Transitions, Jumps, and Bimodality)
+python plotting/plot_thermodynamics.py
+
+# Asymptotic FSS scaling (L >= 24)
+python plotting/plot_fss_asymptotic.py
+
+# Rigidity-Connectivity Gap
+python plotting/plot_rigidity_gap.py
 
 ```
 
+### 4. Generating Supplementary Videos
+To generate the 9 Supplementary Information animations and stand-alone legends, run:
+```bash
+python videos/generate_all_videos.py
+```
+*Note: The generated animations will be exported under the revised SI numbering sequence directly to the `./videos` folder.*
+
+### 5. Running New Simulations
+If you wish to execute your own simulation campaign, run the high-performance computing engines directly. The outputs are saved to their respective subdirectories:
+```bash
+# Run multi-core connectivity simulations
+python simulations/simulate_thermodynamics.py --runs 20000
+
+# Run multi-core relaxed rigidity simulations
+python simulations/simulate_relaxed_rigidity.py
+```
+
+---
+
 ## Citation
 
-If you use this code or data in your work, please cite our preprint:
-
-Trenton Lau and Gary P. T. Choi, 
-"[Explosive connectivity and mechanical rigidity in cubic lattice structures.](https://arxiv.org/abs/2511.01537)"
-arXiv preprint arXiv:2511.01537, 2025.
+If you use this code or our datasets in your research, please cite our paper:
 
 ```bibtex
 @article{lau2025explosive,
