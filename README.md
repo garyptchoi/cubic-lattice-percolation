@@ -96,17 +96,17 @@ python simulations/simulate_relaxed_rigidity.py
 
 ## Citation
 
-If you use this code or our datasets in your research, please cite our paper:
+If you use this code or our datasets in your research, please cite our [paper](https://link.aps.org/doi/10.1103/1fr3-bbxr):
 
 ```bibtex
-@article{lau2025explosive,
+@article{lau2026explosive,
     author    = {Lau, Trenton and Choi, Gary P. T.},
     title     = {Explosive connectivity and mechanical rigidity in cubic lattice structures},
-    journal   = {arXiv preprint arXiv:2511.01537},
-    year      = {2025},
-    eprint    = {2511.01537},
-    archivePrefix = {arXiv},
-    primaryClass = {cond-mat.stat-mech}
+    journal   = {Physical Review Research},
+    volume    = {8},
+    issue     = {4},
+    pages     = {043134},
+    year      = {2026}
 }
 ```
 
